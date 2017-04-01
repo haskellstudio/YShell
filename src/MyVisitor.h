@@ -8,6 +8,7 @@
 
 #include <zconf.h>
 #include <sys/param.h>
+#include <dirent.h>
 #include "../gen/ShellGrammarBaseVisitor.h"
 
 class MyVisitor : public ShellGrammarBaseVisitor{
@@ -20,10 +21,27 @@ class MyVisitor : public ShellGrammarBaseVisitor{
     }
 
     antlrcpp::Any visitGoCommand(ShellGrammarParser::GoCommandContext *ctx) override {
-        chdir(ctx->PATH()->getText().c_str());
-
+        chdir(ctx->filePath()->getText().c_str());
         return NULL;
 
+    }
+
+    antlrcpp::Any visitListCommand(ShellGrammarParser::ListCommandContext *ctx) override {
+        char temp[MAXPATHLEN];
+        getcwd(temp, MAXPATHLEN);
+
+        DIR *dir;
+        dir = opendir(temp);
+        struct dirent *dp;
+        while((dp=readdir(dir)) != NULL){
+            if ( !strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..") ) {
+            } else {
+                std::cout << " " << dp->d_name ;
+            }
+
+        }
+         std::cout << std::endl;
+        return NULL;
     }
 
     antlrcpp::Any visitHereCommand(ShellGrammarParser::HereCommandContext *ctx) override {
