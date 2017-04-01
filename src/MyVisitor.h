@@ -19,11 +19,12 @@ public:
     ~MyVisitor() {};
 
     antlrcpp::Any visitShell(ShellGrammarParser::ShellContext *ctx) override {
-        return visit(ctx->command());
+        visit(ctx->command());
+        return NULL;
     }
 
     antlrcpp::Any visitGoCommand(ShellGrammarParser::GoCommandContext *ctx) override {
-        chdir(ctx->filePath()->getText().c_str());
+        chdir(visit(ctx->filePath()).as<std::string>().c_str());
         return NULL;
 
     }
@@ -33,7 +34,7 @@ public:
         if (ctx->filePath() == NULL) {
             getcwd(temp, MAXPATHLEN);
         } else {
-            //temp = (dynamic_cast<std::string>(visit(ctx->filePath()))).c_str();
+            strcpy(temp, visit(ctx->filePath()).as<std::string>().c_str());
         }
 
         DIR *dir;
@@ -42,7 +43,7 @@ public:
         while ((dp = readdir(dir)) != NULL) {
             if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
             } else {
-                std::cout << " " << dp->d_name;
+                std::cout << " " << dp->d_name << std::endl;
             }
 
         }
@@ -85,19 +86,19 @@ public:
     }
 
     antlrcpp::Any visitQuotedFilepath(ShellGrammarParser::QuotedFilepathContext *ctx) override {
-        return ctx->QUOTED_FILEPATH()->getText().substr(1, ctx->QUOTED_FILEPATH()->getText().length());
+        return Utils::replaceString(ctx->QUOTED_FILEPATH()->getText().substr(1, ctx->QUOTED_FILEPATH()->getText().length()), "~", getenv("HOME"));
     }
 
     antlrcpp::Any visitEscapedFilepath(ShellGrammarParser::EscapedFilepathContext *ctx) override {
-        return Utils::replaceString(ctx->ESCAPED_FILEPATH()->getText(), "\ ", " ");
+        return Utils::replaceString(Utils::replaceString(ctx->ESCAPED_FILEPATH()->getText(), "\ ", " "), "~", getenv("HOME"));
     }
 
     antlrcpp::Any visitQuotedString(ShellGrammarParser::QuotedStringContext *ctx) override {
-        return ctx->QUOTED_STRING()->getText().substr(1, ctx->QUOTED_STRING()->getText().length());
+        return Utils::replaceString(ctx->QUOTED_STRING()->getText().substr(1, ctx->QUOTED_STRING()->getText().length()), "~", getenv("HOME"));
     }
 
     antlrcpp::Any visitEscapedString(ShellGrammarParser::EscapedStringContext *ctx) override {
-        return Utils::replaceString(ctx->ESCAPED_STRING()->getText(), "\ ", " ");
+        return Utils::replaceString(Utils::replaceString(ctx->ESCAPED_STRING()->getText(), "\ ", " "), "~", getenv("HOME"));
     }
 
 
