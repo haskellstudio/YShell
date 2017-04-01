@@ -12,10 +12,11 @@
 #include <Utils.h>
 #include "../gen/ShellGrammarBaseVisitor.h"
 
-class MyVisitor : public ShellGrammarBaseVisitor{
-    public:
-        MyVisitor() : ShellGrammarBaseVisitor(){};
-        ~MyVisitor() {};
+class MyVisitor : public ShellGrammarBaseVisitor {
+public:
+    MyVisitor() : ShellGrammarBaseVisitor() {};
+
+    ~MyVisitor() {};
 
     antlrcpp::Any visitShell(ShellGrammarParser::ShellContext *ctx) override {
         return visit(ctx->command());
@@ -29,19 +30,23 @@ class MyVisitor : public ShellGrammarBaseVisitor{
 
     antlrcpp::Any visitListCommand(ShellGrammarParser::ListCommandContext *ctx) override {
         char temp[MAXPATHLEN];
-        getcwd(temp, MAXPATHLEN);
+        if (ctx->filePath() == NULL) {
+            getcwd(temp, MAXPATHLEN);
+        } else {
+            //temp = (dynamic_cast<std::string>(visit(ctx->filePath()))).c_str();
+        }
 
         DIR *dir;
         dir = opendir(temp);
         struct dirent *dp;
-        while((dp=readdir(dir)) != NULL){
-            if ( !strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..") ) {
+        while ((dp = readdir(dir)) != NULL) {
+            if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
             } else {
-                std::cout << " " << dp->d_name ;
+                std::cout << " " << dp->d_name;
             }
 
         }
-         std::cout << std::endl;
+        std::cout << std::endl;
         return NULL;
     }
 
@@ -80,7 +85,7 @@ class MyVisitor : public ShellGrammarBaseVisitor{
     }
 
     antlrcpp::Any visitQuotedFilepath(ShellGrammarParser::QuotedFilepathContext *ctx) override {
-        return ctx->QUOTED_FILEPATH()->getText().substr(1,ctx->QUOTED_FILEPATH()->getText().length());
+        return ctx->QUOTED_FILEPATH()->getText().substr(1, ctx->QUOTED_FILEPATH()->getText().length());
     }
 
     antlrcpp::Any visitEscapedFilepath(ShellGrammarParser::EscapedFilepathContext *ctx) override {
@@ -88,7 +93,7 @@ class MyVisitor : public ShellGrammarBaseVisitor{
     }
 
     antlrcpp::Any visitQuotedString(ShellGrammarParser::QuotedStringContext *ctx) override {
-        return ctx->QUOTED_STRING()->getText().substr(1,ctx->QUOTED_STRING()->getText().length());
+        return ctx->QUOTED_STRING()->getText().substr(1, ctx->QUOTED_STRING()->getText().length());
     }
 
     antlrcpp::Any visitEscapedString(ShellGrammarParser::EscapedStringContext *ctx) override {
