@@ -21,6 +21,7 @@ class MyVisitor : public ShellGrammarBaseVisitor{
 
     antlrcpp::Any visitGoCommand(ShellGrammarParser::GoCommandContext *ctx) override {
         chdir(ctx->PATH()->getText().c_str());
+
         return NULL;
 
     }
