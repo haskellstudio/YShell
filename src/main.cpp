@@ -5,22 +5,24 @@
 #include "../gen/ShellGrammarLexer.h"
 #include "../gen/ShellGrammarParser.h"
 #include "MyVisitor.h"
-#include "string"
 
 int main() {
-	std::cout << "Hello, World!" << std::endl;
+    std::cout << "Hello, World!" << std::endl;
 
     for (;;) {
+
+        // Construct & show prompt line
         char temp[MAXPATHLEN];
-        std::string path = (getcwd(temp, MAXPATHLEN) ? std::string(temp) : std::string("")) ;
-        std::string::size_type pos = path.find_last_of( "\\/" );
-        path = path.substr(pos + 1,path.length());
-        path = path.length() == 0 ? "/" : path ;
-        std::cout << path<< "$ ";
+        std::string path = (getcwd(temp, MAXPATHLEN) ? std::string(temp) : std::string(""));
+        std::string::size_type pos = path.find_last_of("\\/");
+        path = path.substr(pos + 1, path.length());
+        path = path.length() == 0 ? "/" : path;
+        std::cout << path << "$ ";
+
+        // Obtain user input
         std::string input;
         std::getline(std::cin, input);
-//
-        std::cout <<"THe input is: "  << input << std::endl;
+
         // Create input stream, create lexer and use lexer to create stream of tokens
         antlr4::ANTLRInputStream inputStream(input);
         ShellGrammarLexer lexer(&inputStream);
@@ -30,10 +32,10 @@ int main() {
         ShellGrammarParser parser(&tokens);
         antlr4::tree::ParseTree *parseTree = parser.command();
 
-//	 Then, visit your tree
+        // Visit the tree
         MyVisitor visitor;
         visitor.visit(parseTree);
-    }// Read some line of input....
+    }
 
-	return 0;
+    return 0;
 }

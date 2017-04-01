@@ -9,6 +9,7 @@
 #include <zconf.h>
 #include <sys/param.h>
 #include <dirent.h>
+#include <Utils.h>
 #include "../gen/ShellGrammarBaseVisitor.h"
 
 class MyVisitor : public ShellGrammarBaseVisitor{
@@ -51,8 +52,50 @@ class MyVisitor : public ShellGrammarBaseVisitor{
     }
 
     antlrcpp::Any visitRunCommand(ShellGrammarParser::RunCommandContext *ctx) override {
-        return ShellGrammarBaseVisitor::visitRunCommand(ctx);
+        return NULL;
     }
+
+    antlrcpp::Any visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileContext *ctx) override {
+        return ShellGrammarBaseVisitor::visitSTDOUTToFile(ctx);
+    }
+
+    antlrcpp::Any visitMultipleCommands(ShellGrammarParser::MultipleCommandsContext *ctx) override {
+        return ShellGrammarBaseVisitor::visitMultipleCommands(ctx);
+    }
+
+    antlrcpp::Any visitStandaloneProcess(ShellGrammarParser::StandaloneProcessContext *ctx) override {
+        return ShellGrammarBaseVisitor::visitStandaloneProcess(ctx);
+    }
+
+    antlrcpp::Any visitFileToSTDIN(ShellGrammarParser::FileToSTDINContext *ctx) override {
+        return ShellGrammarBaseVisitor::visitFileToSTDIN(ctx);
+    }
+
+    antlrcpp::Any visitPipe(ShellGrammarParser::PipeContext *ctx) override {
+        return ShellGrammarBaseVisitor::visitPipe(ctx);
+    }
+
+    antlrcpp::Any visitArguments(ShellGrammarParser::ArgumentsContext *ctx) override {
+        return ShellGrammarBaseVisitor::visitArguments(ctx);
+    }
+
+    antlrcpp::Any visitQuotedFilepath(ShellGrammarParser::QuotedFilepathContext *ctx) override {
+        return ctx->QUOTED_FILEPATH()->getText().substr(1,ctx->QUOTED_FILEPATH()->getText().length());
+    }
+
+    antlrcpp::Any visitEscapedFilepath(ShellGrammarParser::EscapedFilepathContext *ctx) override {
+        return Utils::replaceString(ctx->ESCAPED_FILEPATH()->getText(), "\ ", " ");
+    }
+
+    antlrcpp::Any visitQuotedString(ShellGrammarParser::QuotedStringContext *ctx) override {
+        return ctx->QUOTED_STRING()->getText().substr(1,ctx->QUOTED_STRING()->getText().length());
+    }
+
+    antlrcpp::Any visitEscapedString(ShellGrammarParser::EscapedStringContext *ctx) override {
+        return Utils::replaceString(ctx->ESCAPED_STRING()->getText(), "\ ", " ");
+    }
+
+
 };
 
 
