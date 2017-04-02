@@ -5,14 +5,17 @@ shell: command;
 //
 // RULES
 //
-command : command '&&' command # AndCommand
+
+command : command ';' command #SequenceCommand
+        | command '&&' command # AndCommand
+        | command '&' #BGCommand
         | command '||' command # OrCommand
         | command '>' filePath # STDOUTToFile
         | command '2>' filePath # STDERRToFile
         | command '>>' filePath # STDOUTAppendToFile
         | command '<' filePath # FileToSTDIN
         | command '|' command #Pipe
-        | 'go' filePath #GoCommand
+        | 'cd' filePath? #CDCommand
         | 'here' #HereCommand
         | 'ls' (filePath)? #ListCommand
         | 'exit' #ExitCommand
@@ -25,9 +28,9 @@ string : QUOTED_STRING #QuotedString
        | ESCAPED_STRING #EscapedString
        ;
 
-       //
-       // TERMINATORS
-       //
+//
+// TERMINATORS
+//
 
 filePath : QUOTED_FILEPATH #QuotedFilepath
          | ESCAPED_FILEPATH #EscapedFilepath
@@ -44,7 +47,7 @@ ESCAPED_FILEPATH: '~'
                 ;
 
 QUOTED_STRING: '"' ('\\"' | ~["] )*? '"';
-ESCAPED_STRING: ('\\ ' | ~[ ] )+;
+ESCAPED_STRING: ('\\ ' | '\\;' | ~[ ;] )+;
 
 WS: ' '+ -> skip;
 NL: ('\r' '\n' | '\n' | '\r') -> skip;

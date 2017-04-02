@@ -7,8 +7,18 @@ antlrcpp::Any YShellVisitor::visitShell(ShellGrammarParser::ShellContext *ctx) {
     return status;
 }
 
-antlrcpp::Any YShellVisitor::visitGoCommand(ShellGrammarParser::GoCommandContext *ctx) {
-    chdir(visit(ctx->filePath()).as<string>().c_str());
+antlrcpp::Any YShellVisitor::visitSequenceCommand(ShellGrammarParser::SequenceCommandContext *ctx) {
+    int PID = 0;
+    for (int i = 0; i < ctx->command().size(); ++i) {
+        PID = (int) visit(ctx->command()[i]).as<int>();
+        int status;
+        if (PID > 0) waitpid(PID, &status, 0);
+    }
+    return PID;
+}
+
+antlrcpp::Any YShellVisitor::visitCDCommand(ShellGrammarParser::CDCommandContext *ctx) {
+    chdir(ctx->filePath() == NULL ? getenv("HOME") : visit(ctx->filePath()).as<string>().c_str());
     return (int) 0;
 }
 
@@ -117,9 +127,7 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
         filePath = newFilePath;
     }
 
-    // Add executable name as first argument
-    vector<string> pathSplit = Utils::split(filePath.c_str(), '/');
-    arguments.insert(arguments.begin(), pathSplit[pathSplit.size() - 1]);
+    cout << "EXECUTING " + filePath + " " + ctx->arguments()->getText() << endl;
 
     // Execute process
     return YShellVisitor::exec(filePath, arguments, INFD, OUTFD, ERRFD);
@@ -205,7 +213,27 @@ antlrcpp::Any YShellVisitor::visitSTDERRToFile(ShellGrammarParser::STDERRToFileC
 }
 
 antlrcpp::Any YShellVisitor::visitSTDOUTAppendToFile(ShellGrammarParser::STDOUTAppendToFileContext *ctx) {
-    return ShellGrammarBaseVisitor::visitSTDOUTAppendToFile(ctx);
+    // Get file name
+    string file = (string) visit(ctx->filePath()).as<string>();
+
+    // Open file descriptor for file
+    int fdo = open(file.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0666);
+
+    // Set output stream to file
+    int fdBackup = OUTFD;
+    OUTFD = fdo;
+
+    // Run process
+    int PID = (int) visit(ctx->command()).as<int>();
+
+    // Close output stream on this side
+    close(fdo);
+
+    // Reset output stream back to STDOUT
+    OUTFD = fdBackup;
+
+    // Return the PID
+    return PID;
 }
 
 
@@ -283,6 +311,31 @@ antlrcpp::Any YShellVisitor::visitPipe(ShellGrammarParser::PipeContext *ctx) {
     return PID;
 }
 
+antlrcpp::Any YShellVisitor::visitBGCommand(ShellGrammarParser::BGCommandContext *ctx) {
+    // Open file descriptor for /dev/null
+    int fd = open("/dev/null", O_RDONLY);
+
+    // Check if /dev/null exists
+    if (fd < 0) {
+        string str = "UNSUPPORTED SYSTEM! /dev/null IS NOT AVAILABLE.";
+        write(ERRFD, str.c_str(), str.length());
+        return (int) 1;
+    }
+
+    // Route process output to /dev/null
+    int fdBackup = OUTFD;
+    OUTFD = fd;
+
+    // Run process
+    int PID = (int) visit(ctx->command()).as<int>();
+
+    // Restore STDOUT
+    OUTFD = fdBackup;
+    string str = "Started process with PID (" + to_string(PID) + ") in background.";
+    write(OUTFD, str.c_str(), str.length());
+    return (int) 0;
+}
+
 antlrcpp::Any YShellVisitor::visitQuotedFilepath(ShellGrammarParser::QuotedFilepathContext *ctx) {
     return Utils::replaceString(
             ctx->QUOTED_FILEPATH()->getText().substr(1, ctx->QUOTED_FILEPATH()->getText().length() - 1), "~",
@@ -305,7 +358,7 @@ antlrcpp::Any YShellVisitor::visitEscapedString(ShellGrammarParser::EscapedStrin
                                 getenv("HOME"));
 }
 
-int YShellVisitor::exec(string file1, vector<string> args, int input, int output, int error) {
+int YShellVisitor::exec(string file, vector<string> args, int input, int output, int error) {
     //Fork process
     int fid = fork();
 
@@ -324,6 +377,10 @@ int YShellVisitor::exec(string file1, vector<string> args, int input, int output
             close(error);
         }
 
+        // Add executable name as first argument
+        vector<string> pathSplit = Utils::split(file.c_str(), '/');
+        args.insert(args.begin(), pathSplit[pathSplit.size() - 1]);
+
         // Convert args to c style
         char **_args = (char **) calloc(args.size() + 1, sizeof(string));
         for (vector<string>::size_type i = 0; i != args.size(); i++)
@@ -331,7 +388,7 @@ int YShellVisitor::exec(string file1, vector<string> args, int input, int output
         _args[args.size()] = (char *) NULL;
 
         //Execute program
-        execv(file1.c_str(), _args);
+        execv(file.c_str(), _args);
         //Exit process
         exit(0);
     }
@@ -339,6 +396,7 @@ int YShellVisitor::exec(string file1, vector<string> args, int input, int output
     //Close useless pipe ends
     if (input != 0) close(input);
     if (output != 1) close(output);
+    if (error != 2) close(error);
 
     //Return pid
     return fid;

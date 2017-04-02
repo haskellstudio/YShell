@@ -8,6 +8,9 @@
 
 int main() {
 
+    //Home directory is default
+    chdir(getenv("HOME"));
+
     for (;;) {
 
         // Construct & show prompt line

@@ -23,7 +23,7 @@ public:
 
     antlrcpp::Any visitShell(ShellGrammarParser::ShellContext *ctx) override;
 
-    antlrcpp::Any visitGoCommand(ShellGrammarParser::GoCommandContext *ctx) override;
+    antlrcpp::Any visitCDCommand(ShellGrammarParser::CDCommandContext *ctx) override;
 
     antlrcpp::Any visitListCommand(ShellGrammarParser::ListCommandContext *ctx) override;
 
@@ -56,6 +56,10 @@ public:
     antlrcpp::Any visitSTDERRToFile(ShellGrammarParser::STDERRToFileContext *ctx) override;
 
     antlrcpp::Any visitSTDOUTAppendToFile(ShellGrammarParser::STDOUTAppendToFileContext *ctx) override;
+
+    antlrcpp::Any visitBGCommand(ShellGrammarParser::BGCommandContext *ctx) override;
+
+    antlrcpp::Any visitSequenceCommand(ShellGrammarParser::SequenceCommandContext *ctx) override;
 
     static int exec(string file1, vector<string> args, int input = 0, int output = 1, int error = 2);
 
