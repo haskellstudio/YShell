@@ -6,7 +6,8 @@ shell: command;
 // RULES
 //
 
-command : command '&&' command # MultipleCommands
+command : command '&&' command # AndCommand
+        | command '||' command # OrCommand
         | process '>' filePath # STDOUTToFile
         | process '<' filePath # FileToSTDIN
         | process # StandaloneProcess

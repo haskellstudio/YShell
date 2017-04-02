@@ -149,24 +149,20 @@ antlrcpp::Any YShellVisitor::visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileC
     OUTFD = fdBackup;
 
     // Wait for process to finish
-    if (PID > 0) {
-        int status;
-        waitpid(PID, &status, 0);
-    }
+    int status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
 
     // Report success
     string str = "Successfully written to " + file + ".";
     write(OUTFD, str.c_str(), str.length());
-    return NULL;
+    return status;
 }
 
 antlrcpp::Any YShellVisitor::visitStandaloneProcess(ShellGrammarParser::StandaloneProcessContext *ctx) {
     int PID = visit(ctx->process()).as<int>();
-    if (PID > 0) {
-        int status;
-        waitpid(PID, &status, 0);
-    }
-    return NULL;
+    int status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
+    return status;
 }
 
 antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINContext *ctx) {
@@ -180,7 +176,7 @@ antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINCon
     if (fdi < 0) {
         string str = "File '" + file + "' does not exist!";
         write(OUTFD, str.c_str(), str.length());
-        return NULL;
+        return (int) 1;
     }
 
     // Set input stream to file
@@ -197,11 +193,9 @@ antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINCon
     INFD = fdBackup;
 
     // Wait for process to finish
-    if (PID > 0) {
-        int status;
-        waitpid(PID, &status, 0);
-    }
-    return NULL;
+    int status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
+    return status;
 }
 
 antlrcpp::Any YShellVisitor::visitArguments(ShellGrammarParser::ArgumentsContext *ctx) {
@@ -212,8 +206,26 @@ antlrcpp::Any YShellVisitor::visitArguments(ShellGrammarParser::ArgumentsContext
     return args;
 }
 
-antlrcpp::Any YShellVisitor::visitMultipleCommands(ShellGrammarParser::MultipleCommandsContext *ctx) {
-    return ShellGrammarBaseVisitor::visitMultipleCommands(ctx);
+antlrcpp::Any YShellVisitor::visitAndCommand(ShellGrammarParser::AndCommandContext *ctx) {
+    //Execute first command
+    int status = (int) visit(ctx->command()[0]).as<int>();
+
+    //Only execute second command if the first executed successfully
+    if (status == 0) status = (int) visit(ctx->command()[1]).as<int>();
+
+    //Return final status
+    return status;
+}
+
+antlrcpp::Any YShellVisitor::visitOrCommand(ShellGrammarParser::OrCommandContext *ctx) {
+    //Execute first command
+    int status = (int) visit(ctx->command()[0]).as<int>();
+
+    //Only execute second command if the first failed
+    if (status != 0) status = (int) visit(ctx->command()[1]).as<int>();
+
+    //Return final status
+    return status;
 }
 
 antlrcpp::Any YShellVisitor::visitPipe(ShellGrammarParser::PipeContext *ctx) {

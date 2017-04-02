@@ -38,8 +38,6 @@ public:
 
     antlrcpp::Any visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileContext *ctx) override;
 
-    antlrcpp::Any visitMultipleCommands(ShellGrammarParser::MultipleCommandsContext *ctx) override;
-
     antlrcpp::Any visitStandaloneProcess(ShellGrammarParser::StandaloneProcessContext *ctx) override;
 
     antlrcpp::Any visitFileToSTDIN(ShellGrammarParser::FileToSTDINContext *ctx) override;
@@ -55,6 +53,10 @@ public:
     antlrcpp::Any visitQuotedString(ShellGrammarParser::QuotedStringContext *ctx) override;
 
     antlrcpp::Any visitEscapedString(ShellGrammarParser::EscapedStringContext *ctx) override;
+
+    antlrcpp::Any visitAndCommand(ShellGrammarParser::AndCommandContext *ctx) override;
+
+    antlrcpp::Any visitOrCommand(ShellGrammarParser::OrCommandContext *ctx) override;
 
     static int exec(string file1, vector<string> args, int input, int output);
 
