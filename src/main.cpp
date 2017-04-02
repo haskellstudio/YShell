@@ -9,7 +9,7 @@
 int main() {
 
     //Home directory is default
-    //chdir(getenv("HOME"));
+    chdir(getenv("HOME"));
 
     for (;;) {
 
@@ -19,7 +19,7 @@ int main() {
         std::string::size_type pos = path.find_last_of("\\/");
         path = path.substr(pos + 1, path.length());
         path = path.length() == 0 ? "/" : path;
-        std::cout << std::endl << path << "$ ";
+        std::cout << path << "$ ";
 
         // Obtain user input
         std::string input;

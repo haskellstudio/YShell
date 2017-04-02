@@ -52,6 +52,7 @@ antlrcpp::Any YShellVisitor::visitHereCommand(ShellGrammarParser::HereCommandCon
         char temp[MAXPATHLEN];
         string str = getcwd(temp, MAXPATHLEN) ? string(temp) : string("");
         write(OUTFD, str.c_str(), str.length());
+        write(OUTFD, "\n", 1);
         exit(0);
     }
     return PID;
@@ -82,6 +83,7 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
         if (stat(filePath.c_str(), &buffer) != 0) {
             string str = "No executable has been found at path '" + filePath + "'.";
             write(ERRFD, str.c_str(), str.length());
+            write(ERRFD, "\n", 1);
             return 0;
         }
     }
@@ -121,6 +123,7 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
         if (newFilePath == "") {
             string str = "No executable has been found at path '" + filePath + "'.";
             write(ERRFD, str.c_str(), str.length());
+            write(ERRFD, "\n", 1);
             return 0;
         }
 
@@ -166,6 +169,7 @@ antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINCon
     if (fdi < 0) {
         string str = "File '" + file + "' does not exist!";
         write(ERRFD, str.c_str(), str.length());
+        write(ERRFD, "\n", 1);
         return (int) 1;
     }
 
@@ -319,6 +323,7 @@ antlrcpp::Any YShellVisitor::visitBGCommand(ShellGrammarParser::BGCommandContext
     if (fdo < 0 || fdi < 0 || fde < 0) {
         string str = "UNSUPPORTED SYSTEM! /dev/null IS NOT AVAILABLE.";
         write(ERRFD, str.c_str(), str.length());
+        write(ERRFD, "\n", 1);
         return (int) 1;
     }
 
@@ -345,6 +350,7 @@ antlrcpp::Any YShellVisitor::visitBGCommand(ShellGrammarParser::BGCommandContext
 
     string str = "Started process with PID (" + to_string(PID) + ") in background.";
     write(OUTFD, str.c_str(), str.length());
+    write(OUTFD, "\n", 1);
     return (int) 0;
 }
 
