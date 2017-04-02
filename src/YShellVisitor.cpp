@@ -127,8 +127,6 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
         filePath = newFilePath;
     }
 
-    cout << "EXECUTING " + filePath + " " + ctx->arguments()->getText() << endl;
-
     // Execute process
     return YShellVisitor::exec(filePath, arguments, INFD, OUTFD, ERRFD);
 }
@@ -312,25 +310,39 @@ antlrcpp::Any YShellVisitor::visitPipe(ShellGrammarParser::PipeContext *ctx) {
 }
 
 antlrcpp::Any YShellVisitor::visitBGCommand(ShellGrammarParser::BGCommandContext *ctx) {
-    // Open file descriptor for /dev/null
-    int fd = open("/dev/null", O_RDONLY);
+    // Open file descriptors for /dev/null
+    int fde = open("/dev/null", O_RDONLY);
+    int fdo = open("/dev/null", O_RDONLY);
+    int fdi = open("/dev/null", O_WRONLY);
 
     // Check if /dev/null exists
-    if (fd < 0) {
+    if (fdo < 0 || fdi < 0 || fde < 0) {
         string str = "UNSUPPORTED SYSTEM! /dev/null IS NOT AVAILABLE.";
         write(ERRFD, str.c_str(), str.length());
         return (int) 1;
     }
 
-    // Route process output to /dev/null
-    int fdBackup = OUTFD;
-    OUTFD = fd;
+    // Route process IO from/to /dev/null
+    int outFdBackup = OUTFD;
+    int errFdBackup = ERRFD;
+    int inFdBackup = INFD;
+    OUTFD = fde;
+    ERRFD = fdo;
+    INFD = fdi;
 
     // Run process
     int PID = (int) visit(ctx->command()).as<int>();
 
-    // Restore STDOUT
-    OUTFD = fdBackup;
+    // Close file descriptors to /dev/null
+    close(fdo);
+    close(fdi);
+    close(fde);
+
+    // Restore STDOUT STDIN and STDERR
+    OUTFD = outFdBackup;
+    ERRFD = errFdBackup;
+    INFD = inFdBackup;
+
     string str = "Started process with PID (" + to_string(PID) + ") in background.";
     write(OUTFD, str.c_str(), str.length());
     return (int) 0;
@@ -359,6 +371,7 @@ antlrcpp::Any YShellVisitor::visitEscapedString(ShellGrammarParser::EscapedStrin
 }
 
 int YShellVisitor::exec(string file, vector<string> args, int input, int output, int error) {
+
     //Fork process
     int fid = fork();
 

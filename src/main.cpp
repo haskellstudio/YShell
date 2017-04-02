@@ -9,7 +9,7 @@
 int main() {
 
     //Home directory is default
-    chdir(getenv("HOME"));
+    //chdir(getenv("HOME"));
 
     for (;;) {
 
