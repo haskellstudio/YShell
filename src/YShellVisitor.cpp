@@ -22,42 +22,6 @@ antlrcpp::Any YShellVisitor::visitCDCommand(ShellGrammarParser::CDCommandContext
     return (int) 0;
 }
 
-antlrcpp::Any YShellVisitor::visitListCommand(ShellGrammarParser::ListCommandContext *ctx) {
-    int PID = fork();
-    if (PID == 0) {
-        //Load given path or current directory
-        char temp[MAXPATHLEN];
-        if (ctx->filePath() == NULL) getcwd(temp, MAXPATHLEN);
-        else strcpy(temp, visit(ctx->filePath()).as<string>().c_str());
-
-        //Print to console
-        DIR *dir;
-        dir = opendir(temp);
-        struct dirent *dp;
-        while ((dp = readdir(dir)) != NULL) {
-            if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0) {
-                string str = dp->d_name;
-                write(OUTFD, str.c_str(), str.length());
-                write(OUTFD, "\n", 1);
-            }
-        }
-        exit(0);
-    }
-    return PID;
-}
-
-antlrcpp::Any YShellVisitor::visitHereCommand(ShellGrammarParser::HereCommandContext *ctx) {
-    int PID = fork();
-    if (PID == 0) {
-        char temp[MAXPATHLEN];
-        string str = getcwd(temp, MAXPATHLEN) ? string(temp) : string("");
-        write(OUTFD, str.c_str(), str.length());
-        write(OUTFD, "\n", 1);
-        exit(0);
-    }
-    return PID;
-}
-
 antlrcpp::Any YShellVisitor::visitExitCommand(ShellGrammarParser::ExitCommandContext *ctx) {
     exit(0);
 }

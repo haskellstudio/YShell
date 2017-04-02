@@ -16,8 +16,6 @@ command : command ';' command #SequenceCommand
         | command '<' filePath # FileToSTDIN
         | command '|' command #Pipe
         | 'cd' filePath? #CDCommand
-        | 'here' #HereCommand
-        | 'ls' (filePath)? #ListCommand
         | 'exit' #ExitCommand
         | filePath arguments #RunProgram
         ;

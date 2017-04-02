@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(shell)
+project(YShell)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -313,4 +313,4 @@ include_directories(
         src/
 )
 
-add_executable(shell ${SOURCE_FILES})
+add_executable(YShell ${SOURCE_FILES})

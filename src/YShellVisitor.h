@@ -25,10 +25,6 @@ public:
 
     antlrcpp::Any visitCDCommand(ShellGrammarParser::CDCommandContext *ctx) override;
 
-    antlrcpp::Any visitListCommand(ShellGrammarParser::ListCommandContext *ctx) override;
-
-    antlrcpp::Any visitHereCommand(ShellGrammarParser::HereCommandContext *ctx) override;
-
     antlrcpp::Any visitExitCommand(ShellGrammarParser::ExitCommandContext *ctx) override;
 
     antlrcpp::Any visitRunProgram(ShellGrammarParser::RunProgramContext *ctx) override;
