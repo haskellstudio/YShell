@@ -4,7 +4,7 @@
 #include <tree/ParseTree.h>
 #include "../gen/ShellGrammarLexer.h"
 #include "../gen/ShellGrammarParser.h"
-#include "MyVisitor.h"
+#include "YShellVisitor.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -33,7 +33,7 @@ int main() {
         antlr4::tree::ParseTree *parseTree = parser.command();
 
         // Visit the tree
-        MyVisitor visitor;
+        YShellVisitor visitor;
         visitor.visit(parseTree);
     }
 

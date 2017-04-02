@@ -306,7 +306,7 @@ set(SOURCE_FILES
 
     src/main.cpp
 
-        src/MyVisitor.cpp src/MyVisitor.h src/Utils.cpp src/Utils.h)
+        src/YShellVisitor.cpp src/YShellVisitor.h src/Utils.cpp src/Utils.h)
 
 include_directories(
         runtime/src
