@@ -15,32 +15,32 @@ command : command '&&' command # MultipleCommands
 process : process '|' process #Pipe
         | 'go' filePath #GoCommand
         | 'here' #HereCommand
-        | 'run' filePath arguments #RunCommand
         | 'ls' (filePath)? #ListCommand
+        | 'exit' #ExitCommand
+        | filePath arguments #RunProgram
         ;
 
 arguments: (filePath | string)*?;
-
-filePath : QUOTED_FILEPATH #QuotedFilepath
-         | ESCAPED_FILEPATH #EscapedFilepath
-         ;
 
 string : QUOTED_STRING #QuotedString
        | ESCAPED_STRING #EscapedString
        ;
 
-//
-// TERMINATORS
-//
+       //
+       // TERMINATORS
+       //
+
+filePath : QUOTED_FILEPATH #QuotedFilepath
+         | ESCAPED_FILEPATH #EscapedFilepath
+         ;
 
 QUOTED_FILEPATH : '"' '~' '"'
-                | '"' '~/' ([-.a-zA-Z0-9:\\ ] '/'?)* '"'
-                | '"' '/'  ([-.a-zA-Z0-9:\\ ] '/'?)* '"'
+                | '"' ('~/' | '/')  ([-.a-zA-Z0-9:\\ ] '/'?)* '"'
                 | '"' ([-.a-zA-Z0-9:\\ ] '/'?)+ '"'
                 ;
+
 ESCAPED_FILEPATH: '~'
-                | '~/' (('\\ ' | [-.a-zA-Z0-9:\\] ) '/'? )*
-                | '/' (('\\ ' | [-.a-zA-Z0-9:\\] ) '/'? )*
+                | ('~/' | '/') (('\\ ' | [-.a-zA-Z0-9:\\] ) '/'? )*
                 | (('\\ ' | [-.a-zA-Z0-9:\\] ) '/'? )+
                 ;
 
