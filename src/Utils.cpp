@@ -1,7 +1,3 @@
-//
-// Created by bemacized on 4/1/17.
-//
-
 #include "Utils.h"
 
 // From stack overflow answer: http://stackoverflow.com/a/53878

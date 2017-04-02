@@ -1,7 +1,3 @@
-//
-// Created by Kone M on 31/03/2017.
-//
-
 #ifndef SHELL_MYVISITOR_H
 #define SHELL_MYVISITOR_H
 
@@ -17,6 +13,7 @@
 
 class YShellVisitor : public ShellGrammarBaseVisitor {
 public:
+    int ERRFD = 2;
     int OUTFD = 1;
     int INFD = 0;
 
@@ -38,8 +35,6 @@ public:
 
     antlrcpp::Any visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileContext *ctx) override;
 
-    antlrcpp::Any visitStandaloneProcess(ShellGrammarParser::StandaloneProcessContext *ctx) override;
-
     antlrcpp::Any visitFileToSTDIN(ShellGrammarParser::FileToSTDINContext *ctx) override;
 
     antlrcpp::Any visitPipe(ShellGrammarParser::PipeContext *ctx) override;
@@ -58,7 +53,11 @@ public:
 
     antlrcpp::Any visitOrCommand(ShellGrammarParser::OrCommandContext *ctx) override;
 
-    static int exec(string file1, vector<string> args, int input, int output);
+    antlrcpp::Any visitSTDERRToFile(ShellGrammarParser::STDERRToFileContext *ctx) override;
+
+    antlrcpp::Any visitSTDOUTAppendToFile(ShellGrammarParser::STDOUTAppendToFileContext *ctx) override;
+
+    static int exec(string file1, vector<string> args, int input = 0, int output = 1, int error = 2);
 
 };
 

@@ -1,12 +1,10 @@
-//
-// Created by Kone M on 31/03/2017.
-//
-
 #include "YShellVisitor.h"
 
 antlrcpp::Any YShellVisitor::visitShell(ShellGrammarParser::ShellContext *ctx) {
-    visit(ctx->command());
-    return NULL;
+    int PID = (int) visit(ctx->command()).as<int>();
+    int status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
+    return status;
 }
 
 antlrcpp::Any YShellVisitor::visitGoCommand(ShellGrammarParser::GoCommandContext *ctx) {
@@ -44,7 +42,6 @@ antlrcpp::Any YShellVisitor::visitHereCommand(ShellGrammarParser::HereCommandCon
         char temp[MAXPATHLEN];
         string str = getcwd(temp, MAXPATHLEN) ? string(temp) : string("");
         write(OUTFD, str.c_str(), str.length());
-        write(OUTFD, "\n", 1);
         exit(0);
     }
     return PID;
@@ -73,8 +70,8 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
         //Check if file exists
         struct stat buffer;
         if (stat(filePath.c_str(), &buffer) != 0) {
-            string str = "No executable has been found at path '" + filePath + "'.\n";
-            write(OUTFD, str.c_str(), str.length());
+            string str = "No executable has been found at path '" + filePath + "'.";
+            write(ERRFD, str.c_str(), str.length());
             return 0;
         }
     }
@@ -112,8 +109,8 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
 
         //Quit here if no executable found
         if (newFilePath == "") {
-            string str = "No executable has been found at path '" + filePath + "'.\n";
-            write(OUTFD, str.c_str(), str.length());
+            string str = "No executable has been found at path '" + filePath + "'.";
+            write(ERRFD, str.c_str(), str.length());
             return 0;
         }
 
@@ -125,7 +122,7 @@ antlrcpp::Any YShellVisitor::visitRunProgram(ShellGrammarParser::RunProgramConte
     arguments.insert(arguments.begin(), pathSplit[pathSplit.size() - 1]);
 
     // Execute process
-    return YShellVisitor::exec(filePath, arguments, INFD, OUTFD);
+    return YShellVisitor::exec(filePath, arguments, INFD, OUTFD, ERRFD);
 }
 
 antlrcpp::Any YShellVisitor::visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileContext *ctx) {
@@ -140,7 +137,7 @@ antlrcpp::Any YShellVisitor::visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileC
     OUTFD = fdo;
 
     // Run process
-    int PID = (int) visit(ctx->process()).as<int>();
+    int PID = (int) visit(ctx->command()).as<int>();
 
     // Close output stream on this side
     close(fdo);
@@ -148,21 +145,8 @@ antlrcpp::Any YShellVisitor::visitSTDOUTToFile(ShellGrammarParser::STDOUTToFileC
     // Reset output stream back to STDOUT
     OUTFD = fdBackup;
 
-    // Wait for process to finish
-    int status = 0;
-    if (PID > 0) waitpid(PID, &status, 0);
-
-    // Report success
-    string str = "Successfully written to " + file + ".";
-    write(OUTFD, str.c_str(), str.length());
-    return status;
-}
-
-antlrcpp::Any YShellVisitor::visitStandaloneProcess(ShellGrammarParser::StandaloneProcessContext *ctx) {
-    int PID = visit(ctx->process()).as<int>();
-    int status = 0;
-    if (PID > 0) waitpid(PID, &status, 0);
-    return status;
+    // Return the PID
+    return PID;
 }
 
 antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINContext *ctx) {
@@ -175,7 +159,7 @@ antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINCon
     // Check if file exists
     if (fdi < 0) {
         string str = "File '" + file + "' does not exist!";
-        write(OUTFD, str.c_str(), str.length());
+        write(ERRFD, str.c_str(), str.length());
         return (int) 1;
     }
 
@@ -184,7 +168,7 @@ antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINCon
     INFD = fdi;
 
     // Run process
-    int PID = (int) visit(ctx->process()).as<int>();
+    int PID = (int) visit(ctx->command()).as<int>();
 
     // Close input stream on this side
     close(fdi);
@@ -192,11 +176,38 @@ antlrcpp::Any YShellVisitor::visitFileToSTDIN(ShellGrammarParser::FileToSTDINCon
     // Reset input stream
     INFD = fdBackup;
 
-    // Wait for process to finish
-    int status = 0;
-    if (PID > 0) waitpid(PID, &status, 0);
-    return status;
+    // Return the PID
+    return PID;
 }
+
+antlrcpp::Any YShellVisitor::visitSTDERRToFile(ShellGrammarParser::STDERRToFileContext *ctx) {
+    // Get file name
+    string file = (string) visit(ctx->filePath()).as<string>();
+
+    // Open file descriptor for file
+    int fde = open(file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+
+    // Set error stream to file
+    int fdBackup = ERRFD;
+    ERRFD = fde;
+
+    // Run process
+    int PID = (int) visit(ctx->command()).as<int>();
+
+    // Close error stream on this side
+    close(fde);
+
+    // Reset error stream back to STDOUT
+    ERRFD = fdBackup;
+
+    // Return the PID
+    return PID;
+}
+
+antlrcpp::Any YShellVisitor::visitSTDOUTAppendToFile(ShellGrammarParser::STDOUTAppendToFileContext *ctx) {
+    return ShellGrammarBaseVisitor::visitSTDOUTAppendToFile(ctx);
+}
+
 
 antlrcpp::Any YShellVisitor::visitArguments(ShellGrammarParser::ArgumentsContext *ctx) {
     vector<string> args;
@@ -208,23 +219,34 @@ antlrcpp::Any YShellVisitor::visitArguments(ShellGrammarParser::ArgumentsContext
 
 antlrcpp::Any YShellVisitor::visitAndCommand(ShellGrammarParser::AndCommandContext *ctx) {
     //Execute first command
-    int status = (int) visit(ctx->command()[0]).as<int>();
+    int PID = (int) visit(ctx->command()[0]).as<int>();
+
+    //Await first command and get its status
+    int status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
 
     //Only execute second command if the first executed successfully
-    if (status == 0) status = (int) visit(ctx->command()[1]).as<int>();
+    if (status == 0) PID = (int) visit(ctx->command()[1]).as<int>();
 
-    //Return final status
+    //Await second command and return its status
+    if (PID > 0) waitpid(PID, &status, 0);
     return status;
 }
 
 antlrcpp::Any YShellVisitor::visitOrCommand(ShellGrammarParser::OrCommandContext *ctx) {
     //Execute first command
-    int status = (int) visit(ctx->command()[0]).as<int>();
+    int PID = (int) visit(ctx->command()[0]).as<int>();
 
-    //Only execute second command if the first failed
-    if (status != 0) status = (int) visit(ctx->command()[1]).as<int>();
+    //Await first command and get its status
+    int status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
 
-    //Return final status
+    //Only execute second command if the first executed successfully
+    if (status != 0) PID = (int) visit(ctx->command()[1]).as<int>();
+
+    //Await second command and return its status
+    status = 0;
+    if (PID > 0) waitpid(PID, &status, 0);
     return status;
 }
 
@@ -238,7 +260,7 @@ antlrcpp::Any YShellVisitor::visitPipe(ShellGrammarParser::PipeContext *ctx) {
     OUTFD = p[1];
 
     //Execute first process
-    visit(ctx->process()[0]);
+    visit(ctx->command()[0]);
 
     //Reset output stream
     OUTFD = fdBackup;
@@ -248,7 +270,7 @@ antlrcpp::Any YShellVisitor::visitPipe(ShellGrammarParser::PipeContext *ctx) {
     INFD = p[0];
 
     //Execute second process
-    int PID = (int) visit(ctx->process()[1]).as<int>();
+    int PID = (int) visit(ctx->command()[1]).as<int>();
 
     //Reset input stream
     INFD = fdBackup;
@@ -283,12 +305,12 @@ antlrcpp::Any YShellVisitor::visitEscapedString(ShellGrammarParser::EscapedStrin
                                 getenv("HOME"));
 }
 
-int YShellVisitor::exec(string file1, vector<string> args, int input, int output) {
+int YShellVisitor::exec(string file1, vector<string> args, int input, int output, int error) {
     //Fork process
-    int cid = fork();
+    int fid = fork();
 
-    if (cid == 0) {
-        //Set output and input streams
+    if (fid == 0) {
+        //Set output, error and input streams
         if (input != 0) {
             dup2(input, 0);
             close(input);
@@ -296,6 +318,10 @@ int YShellVisitor::exec(string file1, vector<string> args, int input, int output
         if (output != 1) {
             dup2(output, 1);
             close(output);
+        }
+        if (error != 2) {
+            dup2(error, 2);
+            close(error);
         }
 
         // Convert args to c style
@@ -315,5 +341,5 @@ int YShellVisitor::exec(string file1, vector<string> args, int input, int output
     if (output != 1) close(output);
 
     //Return pid
-    return cid;
+    return fid;
 }

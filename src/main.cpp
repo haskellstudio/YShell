@@ -7,7 +7,6 @@
 #include "YShellVisitor.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
 
     for (;;) {
 
@@ -17,7 +16,7 @@ int main() {
         std::string::size_type pos = path.find_last_of("\\/");
         path = path.substr(pos + 1, path.length());
         path = path.length() == 0 ? "/" : path;
-        std::cout << path << "$ ";
+        std::cout << std::endl << path << "$ ";
 
         // Obtain user input
         std::string input;
@@ -30,12 +29,11 @@ int main() {
 
         // Create parser
         ShellGrammarParser parser(&tokens);
-        antlr4::tree::ParseTree *parseTree = parser.command();
+        antlr4::tree::ParseTree *parseTree = parser.shell();
 
         // Visit the tree
         YShellVisitor visitor;
         visitor.visit(parseTree);
     }
 
-    return 0;
 }

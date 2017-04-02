@@ -5,15 +5,13 @@ shell: command;
 //
 // RULES
 //
-
 command : command '&&' command # AndCommand
         | command '||' command # OrCommand
-        | process '>' filePath # STDOUTToFile
-        | process '<' filePath # FileToSTDIN
-        | process # StandaloneProcess
-        ;
-
-process : process '|' process #Pipe
+        | command '>' filePath # STDOUTToFile
+        | command '2>' filePath # STDERRToFile
+        | command '>>' filePath # STDOUTAppendToFile
+        | command '<' filePath # FileToSTDIN
+        | command '|' command #Pipe
         | 'go' filePath #GoCommand
         | 'here' #HereCommand
         | 'ls' (filePath)? #ListCommand
